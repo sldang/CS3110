@@ -1,13 +1,12 @@
-import re
+import tkinter as tk
+from tkinter import Toplevel, Text, Button, Label
 
 class PythonArraySyntaxChecker:
     def __init__(self, program):
         self.program = program.strip().split("\n")  # Split input into lines
 
     def tokenize(self, line):
-        """
-        Tokenize a single line of code using regex.
-        """
+        import re
         token_patterns = {
             "VAR": r"[a-zA-Z_][a-zA-Z0-9_]*",  # Variable name
             "ASSIGN": r"=",                   # Assignment operator
@@ -23,9 +22,6 @@ class PythonArraySyntaxChecker:
         return tokens
 
     def parse_line(self, tokens):
-        """
-        Parse a single line of tokens based on Python array syntax.
-        """
         if len(tokens) == 0:
             return False
 
@@ -50,9 +46,6 @@ class PythonArraySyntaxChecker:
         return False
 
     def check_syntax(self):
-        """
-        Check the syntax of the entire program and report invalid lines.
-        """
         invalid_lines = []
         for i, line in enumerate(self.program):
             tokens = self.tokenize(line.strip())  # Tokenize each line
@@ -60,41 +53,74 @@ class PythonArraySyntaxChecker:
                 invalid_lines.append((i + 1, line.strip()))  # Store line number and content
 
         if invalid_lines:
-            for line_num, code in invalid_lines:
-                print(f"Syntax error in line {line_num}: {code}")
-            return False
+            errors = [f"Syntax error in line {line_num}: {code}" for line_num, code in invalid_lines]
+            return False, errors
 
-        print("Syntax is correct!")
-        return True
+        return True, ["Syntax is correct!"]
 
 
-# Main program
-if __name__ == "__main__":
-    while True:
-        print("\nEnter your Python program (finish with an empty line):")
-        user_input = []
-        while True:
-            try:
-                line = input()
-                if not line.strip():  # Stop on empty input
-                    break
-                user_input.append(line)
-            except KeyboardInterrupt:
-                print("\nExiting the program. Goodbye!")
-                exit()
+def show_results_popup(input_code, results):
+    # Create a new window for the popup
+    popup = Toplevel(root)
+    popup.title("Results")
 
-        if not user_input:  # Handle completely empty input
-            print("No input provided. Exiting...")
-            break
+    # Input code display
+    Label(popup, text="Input Code:").pack(anchor="w", padx=10, pady=5)
+    input_display = Text(popup, height=8, width=50, state="normal")
+    input_display.pack(padx=10, pady=5)
+    input_display.insert("1.0", input_code)
+    input_display.configure(state="disabled")  # Make the text read-only
 
-        program = "\n".join(user_input)  # Combine user input into a single string
-        checker = PythonArraySyntaxChecker(program)
+    # Results display
+    Label(popup, text="Results:").pack(anchor="w", padx=10, pady=5)
+    results_display = Text(popup, height=8, width=50, state="normal")
+    results_display.pack(padx=10, pady=5)
+    results_display.insert("1.0", "\n".join(results))
+    results_display.configure(state="disabled")  # Make the text read-only
 
-        # If no errors, print correct syntax
-        checker.check_syntax()
+    # Back button to close the popup
+    Button(popup, text="Back", command=popup.destroy).pack(pady=10)
 
-        # Ask if the user wants to check another program
-        repeat = input("\nDo you want to check another program? (yes/no): ").strip().lower()
-        if repeat != "yes":
-            print("Goodbye!")
-            break
+
+def check_syntax():
+    # Get the user input from the text box
+    user_input = text_input.get("1.0", tk.END).strip()
+    if not user_input:
+        # Show a warning directly in the results area if the input is empty
+        results_output.delete("1.0", tk.END)
+        results_output.insert(tk.END, "No input provided. Please enter some code to check.")
+        return
+
+    # Use the syntax checker class to check the code
+    checker = PythonArraySyntaxChecker(user_input)
+    is_correct, results = checker.check_syntax()
+
+    # Clear input after checking
+    text_input.delete("1.0", tk.END)
+
+    # Show the results in a popup
+    show_results_popup(user_input, results)
+
+
+# Create the main application window
+root = tk.Tk()
+root.title("Python Array Syntax Checker")
+
+# Label for input area
+input_label = tk.Label(root, text="Enter Python Code:")
+input_label.pack(anchor="w", padx=5, pady=5)
+
+# Text input for Python code
+text_input = tk.Text(root, height=15, width=70)
+text_input.pack(padx=5, pady=5)
+
+# Check Syntax Button
+check_button = tk.Button(root, text="Check Syntax", command=check_syntax)
+check_button.pack(pady=10)
+
+# Results output area (Optional, to track activity in the main window)
+results_output = tk.Text(root, height=10, width=70)
+results_output.pack(padx=5, pady=5)
+
+# Start the application
+root.mainloop()
